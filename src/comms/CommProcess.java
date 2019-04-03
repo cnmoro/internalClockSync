@@ -31,7 +31,7 @@ public class CommProcess {
     InetAddress group;
     DateFormat sdf = new SimpleDateFormat("HH:mm:ss");
     boolean masterAlive = false;
-    final int deltaT1 = 10000;
+    final int deltaT1 = 10000; //10 s
 
     public CommProcess(MulticastSocket s, InetAddress group, Peer peer) {
         this.s = s;
@@ -81,6 +81,7 @@ public class CommProcess {
                                 //Inicia thread de envio de heartbeat/keepalive...
                                 new heartBeat(s, group).start();
                             }
+                            new masterChecker(s, group).start();
                         }
                         //Controle de recebimento de informacoes dos peers (dados relogio)
                     } else if (isPeerInformationRequest(receivedMsg)) {
