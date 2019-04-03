@@ -8,6 +8,8 @@ import java.security.PublicKey;
  *
  * @author cnmoro
  */
+
+//Representacao de um peer e suas informacoes
 public class Peer implements Serializable {
 
     String status;

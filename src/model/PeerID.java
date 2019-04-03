@@ -7,6 +7,8 @@ import java.security.PublicKey;
  *
  * @author cnmoro
  */
+
+//Representacao de um Peer
 public class PeerID implements Serializable {
 
     String identifier;

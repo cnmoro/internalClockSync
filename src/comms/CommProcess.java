@@ -17,8 +17,6 @@ import java.util.Random;
 import model.KeyPacket;
 import model.Peer;
 import model.PeerID;
-import net.sf.json.JSONObject;
-import net.sf.json.JSONSerializer;
 
 /**
  *
@@ -32,6 +30,8 @@ public class CommProcess {
     MulticastSocket s;
     InetAddress group;
     DateFormat sdf = new SimpleDateFormat("HH:mm:ss");
+    boolean masterAlive = false;
+    final int deltaT1 = 10000;
 
     public CommProcess(MulticastSocket s, InetAddress group, Peer peer) {
         this.s = s;
@@ -65,22 +65,39 @@ public class CommProcess {
                 this.buffer = new byte[6400];
                 this.msgIn = new DatagramPacket(buffer, buffer.length);
 
+                //Recebe continuamente as mensagens
                 while (s != null) {
                     String receivedMsg = getMessage();
-//                    System.out.println("Peer " + peer.getIdentifier() + " received: " + receivedMsg);
+                    System.out.println("Peer " + peer.getIdentifier() + " received: " + receivedMsg);
                     resetBuffer();
 
+                    //Controle de definicao de mestre - 1a vez
                     if (isMasterRequest(receivedMsg)) {
                         if (!isMasterDefined()) {
                             setMaster(getSender(receivedMsg));
                             System.out.println("I am " + peer.getIdentifier() + " and my master now is: " + master);
                             sendPublicKey();
+                            if (amIMaster()) {
+                                //Inicia thread de envio de heartbeat/keepalive...
+                                new heartBeat(s, group).start();
+                            }
                         }
-                    } else if (receivedMsg.contains("SendingPeerInformation:")) {
+                        //Controle de recebimento de informacoes dos peers (dados relogio)
+                    } else if (isPeerInformationRequest(receivedMsg)) {
 //                        sdf.parse("DATASTRING");
-                    } else if (receivedMsg.contains("ReplaceMaster:")) {
-                        //replace Master
-                    } else if (receivedMsg.contains("SendingPeerPublicKey:")) {
+                        //TODO
+                        //Controle do recebimento de informacao para substituir o mestre (quando ocorrem falhas)
+                        //Aqui tambem ocorre o teste de autenticidade atraves da chave publica
+                    } else if (isMasterReplaceRequest(receivedMsg)) {
+                        setMaster(getSender(receivedMsg));
+                        System.out.println("I am " + peer.getIdentifier() + " and my master (replaced) now is: " + master);
+                        //sendPublicKey();
+                        if (amIMaster()) {
+                            //Inicia thread de envio de heartbeat/keepalive...
+                            new heartBeat(s, group).start();
+                        }
+                        //Aqui controle de recebimento da chave publica dos outros processos
+                    } else if (isPeerPublicKeyRequest(receivedMsg)) {
                         // PARSE KEYPACKET OBJECT
                         receivedMsg = receivedMsg.replace("SendingPeerPublicKey:", "");
                         String peerId = receivedMsg.substring(0, receivedMsg.indexOf("***"));
@@ -94,6 +111,8 @@ public class CommProcess {
                         PublicKey originalKey = keyFactory.generatePublic(keySpec);
 
                         this.publicKeys.add(new PeerID(peerId, originalKey));
+                    } else if (receivedMsg.contains("SendingHeartBeat:")) {
+                        masterAlive = true;
                     }
                 }
             } catch (Exception e) {
@@ -119,7 +138,7 @@ public class CommProcess {
             try {
                 s.receive(msgIn);
                 String receivedMsg = new String(msgIn.getData());
-                return receivedMsg;
+                return receivedMsg.trim();
             } catch (Exception e) {
                 e.printStackTrace();
                 return "";
@@ -128,6 +147,7 @@ public class CommProcess {
 
         void setMaster(String m) {
             master = m;
+            masterAlive = true;
         }
 
         void resetBuffer() {
@@ -136,16 +156,113 @@ public class CommProcess {
         }
 
         boolean isMasterRequest(String msg) {
-            return msg.contains("masterRequest:");
+            return msg.contains("MasterRequest:");
+        }
+
+        boolean isMasterReplaceRequest(String msg) {
+            return msg.contains("ReplaceMaster:");
+        }
+
+        boolean isPeerPublicKeyRequest(String msg) {
+            return msg.contains("SendingPeerPublicKey:");
+        }
+
+        boolean isPeerInformationRequest(String msg) {
+            return msg.contains("SendingPeerInformation:");
         }
 
         String getSender(String msg) {
             String[] parts = msg.split("\\:");
             return parts[1];
         }
+    }
 
-        boolean isMasterDefined() {
-            return !master.equals("");
+    public class heartBeat extends Thread {
+
+        MulticastSocket s;
+        InetAddress group;
+
+        public heartBeat(MulticastSocket s, InetAddress group) {
+            this.s = s;
+            this.group = group;
+        }
+
+        @Override
+        public void run() {
+            try {
+                while (s != null && amIMaster()) {
+                    //Envia disponibilidade do mestre
+                    sleep();
+                    sendHeartBeat();
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        void sendHeartBeat() {
+            try {
+                byte[] msg = ("SendingHeartBeat:" + master).getBytes();
+
+                DatagramPacket messageOut = new DatagramPacket(msg, msg.length, group, 6789);
+                s.send(messageOut);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        void sleep() throws InterruptedException {
+            Thread.sleep(deltaT1);
+        }
+    }
+
+    public class masterChecker extends Thread {
+
+        MulticastSocket s;
+        InetAddress group;
+
+        public masterChecker(MulticastSocket s, InetAddress group) {
+            this.s = s;
+            this.group = group;
+        }
+
+        @Override
+        public void run() {
+            try {
+                while (s != null) {
+                    //Indica que o mestre não está funcionando
+                    masterAlive = false;
+                    //Durante deltaT1 se houver um heartbeat sera indicado que o mestre esta vivo
+                    sleep();
+                    //Verifica se o mestre ainda 'esta vivo'
+                    checkMaster();
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        //Se nao receber keepalive, envia requisicao para substituir o mestre
+        void checkMaster() {
+            if (masterAlive == false) {
+                sendMasterReplacementRequest();
+            }
+        }
+
+        void sendMasterReplacementRequest() {
+            try {
+                String req = "ReplaceMaster:" + peer.getIdentifier();
+                byte[] msg = req.getBytes();
+
+                DatagramPacket messageOut = new DatagramPacket(msg, msg.length, group, 6789);
+                s.send(messageOut);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        void sleep() throws InterruptedException {
+            Thread.sleep(deltaT1);
         }
     }
 
@@ -165,13 +282,13 @@ public class CommProcess {
                 sleep();
 
                 while (s != null) {
-                    if (isMasterDefined()) {
+                    //Envia informacoes se nao for o mestre, e se o mestre ja estiver definido
+                    if (isMasterDefined() && amIMaster() == false) {
                         sendPeerData();
-                        sleep();
-                    } else {
+                    } else if (isMasterDefined() == false) {
                         sendMasterRequest();
-                        sleep();
                     }
+                    sleep();
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -193,7 +310,7 @@ public class CommProcess {
 
         void sendMasterRequest() {
             try {
-                String req = "masterRequest:" + peer.getIdentifier();
+                String req = "MasterRequest:" + peer.getIdentifier();
                 byte[] msg = req.getBytes();
 
                 DatagramPacket messageOut = new DatagramPacket(msg, msg.length, group, 6789);
@@ -210,5 +327,13 @@ public class CommProcess {
         boolean isMasterDefined() {
             return !master.equals("");
         }
+    }
+
+    boolean isMasterDefined() {
+        return !master.equals("");
+    }
+
+    boolean amIMaster() {
+        return master.equalsIgnoreCase(peer.getIdentifier());
     }
 }

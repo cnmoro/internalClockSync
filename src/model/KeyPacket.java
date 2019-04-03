@@ -6,6 +6,8 @@ import java.io.Serializable;
  *
  * @author cnmoro
  */
+
+//Objeto que identifica um pacote contendo a chave publica de um peer (em string - codificada em base64)
 public class KeyPacket implements Serializable {
 
     String identifier;

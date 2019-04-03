@@ -5,8 +5,6 @@ import java.security.PublicKey;
 import static crypto.RSACryptography.*;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
-import java.util.Calendar;
-import java.util.GregorianCalendar;
 import java.util.Map;
 import java.util.Scanner;
 import model.Peer;
@@ -35,6 +33,7 @@ public class Main {
 //        System.out.println("encrypted:" + encryptedText);
 //        System.out.println("decrypted:" + descryptedText);
 
+        //Cria o socket e inicializa o processo
         MulticastSocket socket = null;
         
         try {
