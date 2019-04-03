@@ -10,8 +10,11 @@ import java.util.Map;
 
 import javax.crypto.Cipher;
 
-// Code from: https://www.quickprogrammingtips.com/java/java-asymmetric-encryption-decryption-example-with-rsa.html
-
+/**
+ *
+ * @author Quick Programming Tips
+ * https://www.quickprogrammingtips.com/java/java-asymmetric-encryption-decryption-example-with-rsa.html
+ */
 public class RSACryptography {
 
     // Get RSA keys. Uses key size of 2048.

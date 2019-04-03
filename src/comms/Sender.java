@@ -1,12 +1,10 @@
 package comms;
 
-import com.google.gson.JsonElement;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
 import java.util.Date;
 import java.util.Random;
-import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 
 /**
