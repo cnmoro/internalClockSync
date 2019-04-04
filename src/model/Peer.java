@@ -8,7 +8,6 @@ import java.security.PublicKey;
  *
  * @author cnmoro
  */
-
 //Representacao de um peer e suas informacoes
 public class Peer implements Serializable {
 
@@ -16,12 +15,14 @@ public class Peer implements Serializable {
     transient PrivateKey privKey;
     transient PublicKey pubKey;
     String identifier;
+    int port;
 
-    public Peer(String status, PrivateKey privKey, PublicKey pubKey, String identifier) {
+    public Peer(String status, PrivateKey privKey, PublicKey pubKey, String identifier, int port) {
         this.status = status;
         this.privKey = privKey;
         this.pubKey = pubKey;
         this.identifier = identifier;
+        this.port = port;
     }
 
     public String getStatus() {
@@ -54,6 +55,14 @@ public class Peer implements Serializable {
 
     public void setIdentifier(String identifier) {
         this.identifier = identifier;
+    }
+
+    public int getPort() {
+        return port;
+    }
+
+    public void setPort(int port) {
+        this.port = port;
     }
 
 }

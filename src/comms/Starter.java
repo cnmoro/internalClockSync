@@ -6,6 +6,7 @@ import static crypto.RSACryptography.*;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
 import java.util.Map;
+import java.util.Random;
 import java.util.Scanner;
 import model.Peer;
 
@@ -47,11 +48,15 @@ public class Starter {
             System.out.println("Process identifier: ");
             String id = scan.nextLine();
 
+            //Gera porta aleatoria entre 5000 e 6000
+            int port = new Random().nextInt((6000 - 5000) + 1) + 5000;
+
             CommonInfo.peer = new Peer(
                     "Slave",
                     (PrivateKey) keysA.get("private"),
                     (PublicKey) keysA.get("public"),
-                    id);
+                    id,
+                    port);
 
             new CommProcess(socket, group).start();
 

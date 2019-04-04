@@ -42,6 +42,7 @@ public class Sender extends Thread {
 
     void sendPeerData() {
         try {
+            //TODO: usar essa função na parte de unicast (dados)
             JsonElement jsonElement = CommonInfo.gson.toJsonTree(CommonInfo.peer);
             jsonElement.getAsJsonObject().addProperty("clock", CommonInfo.sdf.format(new Date()));
             byte[] msg = ("SendingPeerInformation:" + CommonInfo.gson.toJson(jsonElement)).getBytes();
