@@ -21,12 +21,10 @@ public class Receiver extends Thread {
     InetAddress group;
     byte[] buffer;
     DatagramPacket msgIn;
-    ArrayList<PeerID> publicKeys;
 
     public Receiver(MulticastSocket s, InetAddress group) {
         this.s = s;
         this.group = group;
-        this.publicKeys = new ArrayList<>();
     }
 
     @Override
@@ -54,7 +52,7 @@ public class Receiver extends Thread {
                         new MasterChecker(s, group).start();
                     }
                     //Controle de recebimento de informacoes dos peers (dados relogio)
-                } else if (isPeerInformationRequest(receivedMsg)) {
+//                } else if (isPeerInformationRequest(receivedMsg)) {
 //                        sdf.parse("DATASTRING");
                     //TODO
                     //Controle do recebimento de informacao para substituir o mestre (quando ocorrem falhas)
@@ -73,6 +71,9 @@ public class Receiver extends Thread {
                     receivedMsg = receivedMsg.replace("SendingPeerPublicKey:", "");
                     String peerId = receivedMsg.substring(0, receivedMsg.indexOf("***"));
                     System.out.println("peerId: " + peerId);
+                    receivedMsg = receivedMsg.substring(receivedMsg.indexOf("***") + 3, receivedMsg.length());
+                    String port = receivedMsg.substring(0, receivedMsg.indexOf("***"));
+                    System.out.println("port: " + port);
                     String publickey = receivedMsg.substring(receivedMsg.indexOf("***") + 3, receivedMsg.length());
                     System.out.println("publicKey: " + publickey);
 
@@ -81,7 +82,7 @@ public class Receiver extends Thread {
                     KeyFactory keyFactory = KeyFactory.getInstance("RSA");
                     PublicKey originalKey = keyFactory.generatePublic(keySpec);
 
-                    addPublicKey(new PeerID(peerId, originalKey));
+                    addPublicKey(new PeerID(peerId, originalKey, Integer.parseInt(port)));
                 } else if (receivedMsg.contains("SendingHeartBeat:")) {
                     CommonInfo.masterAlive = true;
                 } else if (isMasterInquiry(receivedMsg)) {
@@ -105,7 +106,7 @@ public class Receiver extends Thread {
         //Verifica se o peer ja está na lista, e só adiciona caso n esteja
         boolean shouldAdd = true;
 
-        for (PeerID p : publicKeys) {
+        for (PeerID p : CommonInfo.publicKeys) {
             if (p.getIdentifier().equalsIgnoreCase(pid.getIdentifier())) {
                 shouldAdd = false;
                 break;
@@ -113,16 +114,16 @@ public class Receiver extends Thread {
         }
 
         if (shouldAdd) {
-            publicKeys.add(pid);
+            CommonInfo.publicKeys.add(pid);
         }
     }
 
     void sendPublicKey() {
         try {
             String encodedPubKey = Base64.getEncoder().encodeToString(CommonInfo.peer.getPubKey().getEncoded());
-            KeyPacket kp = new KeyPacket(CommonInfo.peer.getIdentifier(), encodedPubKey);
+            KeyPacket kp = new KeyPacket(CommonInfo.peer.getIdentifier(), encodedPubKey, CommonInfo.peer.getPort());
 
-            byte[] msg = ("SendingPeerPublicKey:" + kp.getIdentifier() + "***" + kp.getPublicKey()).getBytes();
+            byte[] msg = ("SendingPeerPublicKey:" + kp.getIdentifier() + "***" + kp.getPublicKey() + "***" + kp.getPort()).getBytes();
 
             DatagramPacket packet = new DatagramPacket(msg, msg.length, group, 6789);
             s.send(packet);
@@ -178,10 +179,6 @@ public class Receiver extends Thread {
 
     boolean isPeerPublicKeyRequest(String msg) {
         return msg.contains("SendingPeerPublicKey:");
-    }
-
-    boolean isPeerInformationRequest(String msg) {
-        return msg.contains("SendingPeerInformation:");
     }
 
     boolean isMasterInquiry(String msg) {

@@ -3,7 +3,9 @@ package comms;
 import com.google.gson.Gson;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import model.Peer;
+import model.PeerID;
 
 /**
  *
@@ -16,6 +18,8 @@ public class CommonInfo {
     public static boolean masterAlive = false;
     public static Gson gson = new Gson();
     public static DateFormat sdf = new SimpleDateFormat("HH:mm:ss");
+    public static ArrayList<PeerID> publicKeys;
+    public static String host = "localhost";
 
     //time interval - heartbeat / keepalive
     public static final int deltaT1 = 10000; //10 s

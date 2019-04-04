@@ -21,6 +21,7 @@ public class CommProcess {
         new Receiver(s, group).start();
         new Sender(s, group).start();
         new TimeOutChecker(s, group).start();
+        new UnicastServer().start();
         System.out.println("Peer " + CommonInfo.peer.getIdentifier() + " started.");
     }
 }
