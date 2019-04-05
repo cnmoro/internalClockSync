@@ -3,6 +3,7 @@ package comms;
 import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
+import java.util.Random;
 
 /**
  *
@@ -36,8 +37,12 @@ public class MasterChecker extends Thread {
 
     //Se nao receber keepalive, envia requisicao para substituir o mestre
     void checkMaster() {
-        if (CommonInfo.masterAlive == false) {
-            sendMasterReplacementRequest();
+        try {
+            if (CommonInfo.masterAlive == false) {
+                sendMasterReplacementRequest();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
@@ -54,6 +59,6 @@ public class MasterChecker extends Thread {
     }
 
     void sleep() throws InterruptedException {
-        Thread.sleep(CommonInfo.deltaT1);
+        Thread.sleep(CommonInfo.deltaT1 + (new Random().nextInt((3 - 2) + 1) + 2) * 1000);
     }
 }

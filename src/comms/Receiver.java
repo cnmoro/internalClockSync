@@ -56,6 +56,8 @@ public class Receiver extends Thread {
                         new MasterChecker(s, group).start();
                     }
                 } else if (isMasterReplaceRequest(receivedMsg)) {
+                    CommonInfo.replacingMaster = true;
+                    removeMaster();
                     setMaster(getSender(receivedMsg));
                     System.out.println("I am " + CommonInfo.peer.getIdentifier() + " and my master (replaced) now is: " + CommonInfo.master);
                     //sendPublicKey();
@@ -155,6 +157,22 @@ public class Receiver extends Thread {
         } catch (Exception e) {
             e.printStackTrace();
             return "";
+        }
+    }
+
+    void removeMaster() {
+        String m = CommonInfo.master;
+
+        for (int i = 0; i < CommonInfo.publicKeys.size(); i++) {
+            if (CommonInfo.publicKeys.get(i).getIdentifier().equalsIgnoreCase(m)) {
+                CommonInfo.publicKeys.remove(i);
+            }
+        }
+
+        for (int i = 0; i < CommonInfo.timePeers.size(); i++) {
+            if (CommonInfo.timePeers.get(i).getPeerIdentifier().equalsIgnoreCase(m)) {
+                CommonInfo.timePeers.remove(i);
+            }
         }
     }
 
