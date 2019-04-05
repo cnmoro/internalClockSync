@@ -6,10 +6,11 @@ import java.net.MulticastSocket;
 import java.security.KeyFactory;
 import java.security.PublicKey;
 import java.security.spec.X509EncodedKeySpec;
-import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Date;
+import java.util.Random;
 import model.KeyPacket;
-import model.PeerID;
+import model.Peer;
 
 /**
  *
@@ -48,15 +49,13 @@ public class Receiver extends Thread {
                         if (CommonInfo.amIMaster()) {
                             //Inicia thread de envio de heartbeat/keepalive...
                             new HeartBeat(s, group).start();
+
+                            //Inicia thread de atualizacao de relogios
+                            new ClockPoll(s, group).start();
                         }
+                        Thread.sleep((new Random().nextInt((4 - 2) + 1) + 2) * 1000);
                         new MasterChecker(s, group).start();
                     }
-                    //Controle de recebimento de informacoes dos peers (dados relogio)
-//                } else if (isPeerInformationRequest(receivedMsg)) {
-//                        sdf.parse("DATASTRING");
-                    //TODO
-                    //Controle do recebimento de informacao para substituir o mestre (quando ocorrem falhas)
-                    //Aqui tambem ocorre o teste de autenticidade atraves da chave publica
                 } else if (isMasterReplaceRequest(receivedMsg)) {
                     setMaster(getSender(receivedMsg));
                     System.out.println("I am " + CommonInfo.peer.getIdentifier() + " and my master (replaced) now is: " + CommonInfo.master);
@@ -64,26 +63,31 @@ public class Receiver extends Thread {
                     if (CommonInfo.amIMaster()) {
                         //Inicia thread de envio de heartbeat/keepalive...
                         new HeartBeat(s, group).start();
+                        new ClockPoll(s, group).start();
                     }
                     //Aqui controle de recebimento da chave publica dos outros processos
                 } else if (isPeerPublicKeyRequest(receivedMsg)) {
                     // PARSE KEYPACKET OBJECT
                     receivedMsg = receivedMsg.replace("SendingPeerPublicKey:", "");
                     String peerId = receivedMsg.substring(0, receivedMsg.indexOf("***"));
-                    System.out.println("peerId: " + peerId);
+                    //System.out.println("peerId: " + peerId);
                     receivedMsg = receivedMsg.substring(receivedMsg.indexOf("***") + 3, receivedMsg.length());
-                    String port = receivedMsg.substring(0, receivedMsg.indexOf("***"));
-                    System.out.println("port: " + port);
-                    String publickey = receivedMsg.substring(receivedMsg.indexOf("***") + 3, receivedMsg.length());
-                    System.out.println("publicKey: " + publickey);
+                    String publickey = receivedMsg.substring(0, receivedMsg.indexOf("***"));
+                    //System.out.println("publicKey: " + publickey);
+                    String port = receivedMsg.substring(receivedMsg.indexOf("***") + 3, receivedMsg.length());
+                    //System.out.println("port: " + port);
 
+                    //External code
                     byte[] decodedKey = Base64.getDecoder().decode(publickey.trim());
                     X509EncodedKeySpec keySpec = new X509EncodedKeySpec(decodedKey);
                     KeyFactory keyFactory = KeyFactory.getInstance("RSA");
                     PublicKey originalKey = keyFactory.generatePublic(keySpec);
+                    //
 
-                    addPublicKey(new PeerID(peerId, originalKey, Integer.parseInt(port)));
-                } else if (receivedMsg.contains("SendingHeartBeat:")) {
+                    System.out.println("Stored public key from Peer " + peerId + " in port " + port);
+
+                    addPublicKey(new Peer(null, originalKey, peerId, Integer.parseInt(port)));
+                } else if (isHeartBeat(receivedMsg)) {
                     CommonInfo.masterAlive = true;
                 } else if (isMasterInquiry(receivedMsg)) {
                     sendMasterInfo();
@@ -102,11 +106,11 @@ public class Receiver extends Thread {
         }
     }
 
-    void addPublicKey(PeerID pid) {
-        //Verifica se o peer ja está na lista, e só adiciona caso n esteja
+    void addPublicKey(Peer pid) {
+        //Verifica se o peer ja está na lista, e só adiciona caso nao esteja
         boolean shouldAdd = true;
 
-        for (PeerID p : CommonInfo.publicKeys) {
+        for (Peer p : CommonInfo.publicKeys) {
             if (p.getIdentifier().equalsIgnoreCase(pid.getIdentifier())) {
                 shouldAdd = false;
                 break;
@@ -183,6 +187,10 @@ public class Receiver extends Thread {
 
     boolean isMasterInquiry(String msg) {
         return msg.contains("WhoIsTheMaster?");
+    }
+
+    boolean isHeartBeat(String msg) {
+        return msg.contains("SendingHeartBeat:");
     }
 
     String getSender(String msg) {

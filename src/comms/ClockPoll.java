@@ -2,7 +2,8 @@ package comms;
 
 import java.net.InetAddress;
 import java.net.MulticastSocket;
-import model.PeerID;
+import model.Peer;
+import model.TimePeer;
 
 /**
  *
@@ -21,6 +22,7 @@ public class ClockPoll extends Thread {
     @Override
     public void run() {
         try {
+            System.out.println("Starting ClockPolling from " + CommonInfo.peer.getIdentifier());
             while (s != null && CommonInfo.amIMaster()) {
                 sleep();
 
@@ -33,18 +35,42 @@ public class ClockPoll extends Thread {
 
     void sendClockPoll() {
         try {
-            for (PeerID pid : CommonInfo.publicKeys) {
-                String msg = "SendingClockPoll:" + CommonInfo.master;
-
+            System.out.println("Sending clock poll to " + CommonInfo.publicKeys.size() + " peers.");
+            String msg = "SendingClockPoll:" + CommonInfo.master;
+            for (Peer pid : CommonInfo.publicKeys) {
+                System.out.println("Trying to send clock poll to peer " + pid.getIdentifier() + " in port " + pid.getPort());
                 //Só envia se o peer nao for o mestre
                 if (!pid.getIdentifier().equalsIgnoreCase(CommonInfo.master)) {
-                    //Envia poll para todos os escravos
-                    //TODO: guardar timestamp para comparar com o tempo de resposta
+                    System.out.println("Peer " + pid.getIdentifier() + " is not the master. Sending.");
+                    //Envia poll para todos os escravos, e marca o tempo atual
                     new UnicastMessenger(pid.getPort(), msg).start();
+
+                    addTimePeer(pid.getIdentifier());
+                } else {
+                    System.out.println("Peer " + pid.getIdentifier() + " is the master, skipping...");
                 }
             }
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+
+    void addTimePeer(String id) {
+        boolean exists = false;
+        int index = 0;
+
+        for (int i = 0; i < CommonInfo.timePeers.size(); i++) {
+            if (CommonInfo.timePeers.get(i).getPeerIdentifier().equalsIgnoreCase(id)) {
+                exists = true;
+                index = i;
+            }
+        }
+
+        if (!exists) {
+            CommonInfo.timePeers.add(new TimePeer(id, System.currentTimeMillis()));
+        } else {
+            CommonInfo.timePeers.get(index).setPeerIdentifier(id);
+            CommonInfo.timePeers.get(index).setTime(System.currentTimeMillis());
         }
     }
 

@@ -19,21 +19,6 @@ public class Starter {
     static final String MULTICAST_IP = "228.5.6.7";
 
     public static void main(String[] args) throws Exception {
-//        String plainText = "Hello World!";
-//
-//        // Generate public and private keys using RSA
-//        Map<String, Object> keys = getRSAKeys();
-//
-//        PrivateKey privateKey = (PrivateKey) keys.get("private");
-//        PublicKey publicKey = (PublicKey) keys.get("public");
-//
-//        String encryptedText = encryptMessage(plainText, privateKey);
-//        String descryptedText = decryptMessage(encryptedText, publicKey);
-//
-//        System.out.println("input:" + plainText);
-//        System.out.println("encrypted:" + encryptedText);
-//        System.out.println("decrypted:" + descryptedText);
-
         //Cria o socket e inicializa o processo
         MulticastSocket socket = null;
 
@@ -52,7 +37,6 @@ public class Starter {
             int port = new Random().nextInt((6000 - 5000) + 1) + 5000;
 
             CommonInfo.peer = new Peer(
-                    "Slave",
                     (PrivateKey) keysA.get("private"),
                     (PublicKey) keysA.get("public"),
                     id,
