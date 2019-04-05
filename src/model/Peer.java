@@ -8,29 +8,27 @@ import java.security.PublicKey;
  *
  * @author cnmoro
  */
-//Representacao de um peer e suas informacoes
+//Representacao de um Peer
 public class Peer implements Serializable {
 
-    String status;
-    transient PrivateKey privKey;
-    transient PublicKey pubKey;
+    PrivateKey privKey;
+    PublicKey pubKey;
     String identifier;
     int port;
 
-    public Peer(String status, PrivateKey privKey, PublicKey pubKey, String identifier, int port) {
-        this.status = status;
+    public Peer(PrivateKey privKey, PublicKey pubKey, String identifier, int port) {
         this.privKey = privKey;
         this.pubKey = pubKey;
         this.identifier = identifier;
         this.port = port;
     }
 
-    public String getStatus() {
-        return status;
+    public String getIdentifier() {
+        return identifier;
     }
 
-    public void setStatus(String status) {
-        this.status = status;
+    public void setIdentifier(String identifier) {
+        this.identifier = identifier;
     }
 
     public PrivateKey getPrivKey() {
@@ -47,14 +45,6 @@ public class Peer implements Serializable {
 
     public void setPubKey(PublicKey pubKey) {
         this.pubKey = pubKey;
-    }
-
-    public String getIdentifier() {
-        return identifier;
-    }
-
-    public void setIdentifier(String identifier) {
-        this.identifier = identifier;
     }
 
     public int getPort() {
