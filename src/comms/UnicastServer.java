@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.Calendar;
 import java.util.Date;
 import model.Peer;
 
@@ -63,6 +64,7 @@ public class UnicastServer extends Thread {
                                     decryptedText = decryptedText.replace("Ok:", "");
                                     long diff = Long.parseLong(decryptedText);
                                     System.out.println("Time adjustment is: " + diff + " ms");
+                                    updateClock(diff);
                                 }
                                 break;
                             }
@@ -83,9 +85,8 @@ public class UnicastServer extends Thread {
                                 long RTT = System.currentTimeMillis() - CommonInfo.timePeers.get(i).getTime();
 
                                 //Calcula a diferença do relógio interno com o do peer + RTT
-                                Date dateMaster = new Date();
                                 Date datePeer = CommonInfo.sdf.parse(msgClock);
-                                long diff = (datePeer.getTime() - dateMaster.getTime()) + RTT / 2;
+                                long diff = (datePeer.getTime() - new Date().getTime()) + RTT / 2;
 
                                 for (Peer p : CommonInfo.publicKeys) {
                                     if (p.getIdentifier().equalsIgnoreCase(msgPeer)) {
@@ -105,8 +106,8 @@ public class UnicastServer extends Thread {
         }
     }
 
-    public void sendPeerInfo() {
-        String peerInfo = "PeerInfo:" + CommonInfo.peer.getIdentifier() + "***" + CommonInfo.sdf.format(new Date());
+    void sendPeerInfo() {
+        String peerInfo = "PeerInfo:" + CommonInfo.peer.getIdentifier() + "***" + CommonInfo.sdf.format(CommonInfo.calendar.getTime());
         for (Peer p : CommonInfo.publicKeys) {
             if (p.getIdentifier().equalsIgnoreCase(CommonInfo.master)) {
                 System.out.println("Poll came from the master, sending my info via unicast to peer at port " + p.getPort());
@@ -114,5 +115,9 @@ public class UnicastServer extends Thread {
                 break;
             }
         }
+    }
+
+    void updateClock(long ms) {
+        CommonInfo.calendar.add(Calendar.MILLISECOND, (int) ms * (-1));
     }
 }

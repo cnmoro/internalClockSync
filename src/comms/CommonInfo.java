@@ -3,6 +3,7 @@ package comms;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import model.Peer;
 import model.TimePeer;
 
@@ -19,6 +20,8 @@ public class CommonInfo {
     public static ArrayList<Peer> publicKeys = new ArrayList<>();
     public static ArrayList<TimePeer> timePeers = new ArrayList<>();
     public static String host = "127.0.0.1";
+    public static long clockOffset;
+    public static Calendar calendar;
 
     //Time interval - heartbeat / keepalive
     public static final int deltaT1 = 10000; //10 s
