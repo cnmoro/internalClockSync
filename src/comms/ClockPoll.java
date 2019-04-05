@@ -59,18 +59,18 @@ public class ClockPoll extends Thread {
         boolean exists = false;
         int index = 0;
 
-        for (int i = 0; i < CommonInfo.timePeers.size(); i++) {
-            if (CommonInfo.timePeers.get(i).getPeerIdentifier().equalsIgnoreCase(id)) {
+        for (int i = 0; i < CommonInfo.timePeersInstant.size(); i++) {
+            if (CommonInfo.timePeersInstant.get(i).getPeerIdentifier().equalsIgnoreCase(id)) {
                 exists = true;
                 index = i;
             }
         }
 
         if (!exists) {
-            CommonInfo.timePeers.add(new TimePeer(id, System.currentTimeMillis()));
+            CommonInfo.timePeersInstant.add(new TimePeer(id, System.currentTimeMillis(), 0));
         } else {
-            CommonInfo.timePeers.get(index).setPeerIdentifier(id);
-            CommonInfo.timePeers.get(index).setTime(System.currentTimeMillis());
+            CommonInfo.timePeersInstant.get(index).setPeerIdentifier(id);
+            CommonInfo.timePeersInstant.get(index).setTime(System.currentTimeMillis());
         }
     }
 

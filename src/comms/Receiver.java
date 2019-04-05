@@ -6,6 +6,7 @@ import java.net.MulticastSocket;
 import java.security.KeyFactory;
 import java.security.PublicKey;
 import java.security.spec.X509EncodedKeySpec;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Random;
 import model.KeyPacket;
@@ -64,6 +65,8 @@ public class Receiver extends Thread {
                     if (CommonInfo.amIMaster()) {
                         //Inicia thread de envio de heartbeat/keepalive...
                         new HeartBeat(s, group).start();
+
+                        //Inicia thread de atualizacao de relogios
                         new ClockPoll(s, group).start();
                     }
                     //Aqui controle de recebimento da chave publica dos outros processos
@@ -169,11 +172,20 @@ public class Receiver extends Thread {
             }
         }
 
-        for (int i = 0; i < CommonInfo.timePeers.size(); i++) {
-            if (CommonInfo.timePeers.get(i).getPeerIdentifier().equalsIgnoreCase(m)) {
-                CommonInfo.timePeers.remove(i);
-            }
-        }
+        CommonInfo.timePeersInstant = new ArrayList<>();
+        CommonInfo.timePeersAvg = new ArrayList<>();
+
+//        for (int i = 0; i < CommonInfo.timePeersInstant.size(); i++) {
+//            if (CommonInfo.timePeersInstant.get(i).getPeerIdentifier().equalsIgnoreCase(m)) {
+//                CommonInfo.timePeersInstant.remove(i);
+//            }
+//        }
+//
+//        for (int i = 0; i < CommonInfo.timePeersAvg.size(); i++) {
+//            if (CommonInfo.timePeersAvg.get(i).getPeerIdentifier().equalsIgnoreCase(m)) {
+//                CommonInfo.timePeersAvg.remove(i);
+//            }
+//        }
     }
 
     void setMaster(String m) {

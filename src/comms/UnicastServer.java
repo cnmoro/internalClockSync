@@ -6,9 +6,11 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import model.Peer;
+import model.TimePeer;
 
 /**
  *
@@ -78,22 +80,46 @@ public class UnicastServer extends Thread {
                         String msgClock = msgAux;
 
                         //Verifica qual peer que está enviando a informação de relógio
-                        for (int i = 0; i < CommonInfo.timePeers.size(); i++) {
+                        for (int i = 0; i < CommonInfo.timePeersInstant.size(); i++) {
                             //Este é o peer que enviou
-                            if (CommonInfo.timePeers.get(i).getPeerIdentifier().equalsIgnoreCase(msgPeer)) {
+                            if (CommonInfo.timePeersInstant.get(i).getPeerIdentifier().equalsIgnoreCase(msgPeer)) {
                                 //Calcula o round trip time (RTT)
-                                long RTT = System.currentTimeMillis() - CommonInfo.timePeers.get(i).getTime();
+                                long RTT = System.currentTimeMillis() - CommonInfo.timePeersInstant.get(i).getTime();
 
-                                //Calcula a diferença do relógio interno com o do peer + RTT
                                 Date datePeer = CommonInfo.sdf.parse(msgClock);
-                                long diff = (datePeer.getTime() - new Date().getTime()) + RTT / 2;
+                                
+                                //Armazenar em timePeersAvg os relogios de cada peer recebido e seu respectivo RTT
+                                CommonInfo.timePeersAvg.add(new TimePeer(
+                                        CommonInfo.timePeersInstant.get(i).getPeerIdentifier(),
+                                        datePeer.getTime(),
+                                        RTT)
+                                );
 
-                                for (Peer p : CommonInfo.publicKeys) {
-                                    if (p.getIdentifier().equalsIgnoreCase(msgPeer)) {
-                                        //Envia mensagem de ajuste de relógio (atrasar ou adiantar) CRIPTOGRAFADA com chave privada
-                                        new UnicastMessenger(p.getPort(), "UpdateClock:" + RSACryptography.encryptMessage("Ok:" + diff, CommonInfo.peer.getPrivKey())).start();
-                                        break;
+                                //No recebimento do último relógio (PeerInfo), fazer a média entre todos (inclusive mestre)
+                                if (CommonInfo.timePeersAvg.size() == CommonInfo.publicKeys.size() - 1) {
+                                    long clocksAvg = 0;
+
+                                    for (TimePeer tpa : CommonInfo.timePeersAvg) {
+                                        clocksAvg += tpa.getTime();
                                     }
+
+                                    clocksAvg = (clocksAvg + CommonInfo.calendar.getTime().getTime()) / 4;
+
+                                    //Atualizar o relógio do mestre e enviar mensagem de atualização de relógio para os escravos
+                                    updateClock(CommonInfo.calendar.getTime().getTime() - clocksAvg);
+
+                                    for (Peer p : CommonInfo.publicKeys) {
+                                        //Encontra o TimePeer deste Peer
+                                        for (TimePeer tpa : CommonInfo.timePeersAvg) {
+                                            if (tpa.getPeerIdentifier().equalsIgnoreCase(p.getIdentifier())) {
+                                                //Envia mensagem de ajuste de relógio (atrasar ou adiantar) CRIPTOGRAFADA com chave privada
+                                                long diff = (tpa.getTime() - clocksAvg) + tpa.getRTT() / 2;
+                                                new UnicastMessenger(p.getPort(), "UpdateClock:" + RSACryptography.encryptMessage("Ok:" + diff, CommonInfo.peer.getPrivKey())).start();
+                                                break;
+                                            }
+                                        }
+                                    }
+                                    CommonInfo.timePeersAvg = new ArrayList<>();
                                 }
                                 break;
                             }
@@ -119,5 +145,6 @@ public class UnicastServer extends Thread {
 
     void updateClock(long ms) {
         CommonInfo.calendar.add(Calendar.MILLISECOND, (int) ms * (-1));
+        System.out.println("Current updated time: " + CommonInfo.sdf.format(CommonInfo.calendar.getTime()));
     }
 }

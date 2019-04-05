@@ -18,7 +18,8 @@ public class CommonInfo {
     public static boolean masterAlive = false;
     public static DateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
     public static ArrayList<Peer> publicKeys = new ArrayList<>();
-    public static ArrayList<TimePeer> timePeers = new ArrayList<>();
+    public static ArrayList<TimePeer> timePeersInstant = new ArrayList<>();
+    public static ArrayList<TimePeer> timePeersAvg = new ArrayList<>();
     public static String host = "127.0.0.1";
     public static Calendar calendar;
     public static boolean replacingMaster = false;

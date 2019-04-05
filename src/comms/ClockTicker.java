@@ -25,10 +25,10 @@ public class ClockTicker extends Thread {
     }
 
     void sleep() throws InterruptedException {
-        Thread.sleep(500);
+        Thread.sleep(100);
     }
 
     void tick() {
-        CommonInfo.calendar.add(Calendar.MILLISECOND, 500);
+        CommonInfo.calendar.add(Calendar.MILLISECOND, 100);
     }
 }

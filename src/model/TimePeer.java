@@ -8,10 +8,12 @@ public class TimePeer {
 
     String peerIdentifier;
     long time;
+    long RTT;
 
-    public TimePeer(String peerIdentifier, long time) {
+    public TimePeer(String peerIdentifier, long time, long RTT) {
         this.peerIdentifier = peerIdentifier;
         this.time = time;
+        this.RTT = RTT;
     }
 
     public String getPeerIdentifier() {
@@ -28,6 +30,14 @@ public class TimePeer {
 
     public void setTime(long time) {
         this.time = time;
+    }
+
+    public long getRTT() {
+        return RTT;
+    }
+
+    public void setRTT(long RTT) {
+        this.RTT = RTT;
     }
 
 }
