@@ -18,6 +18,7 @@ public class CommProcess {
     }
 
     public void start() {
+        new ClockTicker().start();
         new Receiver(s, group).start();
         new MasterRequest(s, group).start();
         new TimeOutChecker(s, group).start();

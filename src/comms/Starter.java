@@ -34,7 +34,7 @@ public class Starter {
             String id = scan.nextLine();
 
             //Gera porta aleatoria entre 5000 e 6000
-            int port = new Random().nextInt((6000 - 5000) + 1) + 5000;
+            int port = new Random().nextInt((7000 - 5000) + 1) + 5000;
 
             CommonInfo.peer = new Peer(
                     (PrivateKey) keysA.get("private"),
