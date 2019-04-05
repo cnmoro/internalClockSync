@@ -59,6 +59,6 @@ public class MasterChecker extends Thread {
     }
 
     void sleep() throws InterruptedException {
-        Thread.sleep(CommonInfo.deltaT1 + (new Random().nextInt((3 - 2) + 1) + 2) * 1000);
+        Thread.sleep(CommonInfo.deltaT1 + (new Random().nextInt((3500 - 2000) + 1) + 2000));
     }
 }
